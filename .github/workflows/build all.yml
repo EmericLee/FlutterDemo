@@ -44,7 +44,8 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.38.0'  # 指定明确的稳定版本号以支持ARM64
+          flutter-version: '3.38.0'  # 指定明确的稳定版本号以支持ARM64        
+          channel: 'stable'
           cache: false
           
       - name: Enable Desktop
@@ -77,6 +78,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.38.0'  # 指定明确的稳定版本号以支持ARM64        
           channel: 'stable'
           cache: false
           
