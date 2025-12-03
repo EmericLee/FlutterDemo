@@ -21,7 +21,7 @@ jobs:
         uses: subosito/flutter-action@v2.13.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}  # 使用全局版本变量
-          cache: true
+          cache: flase
           cache-key: 'flutter-${{ env.FLUTTER_VERSION }}-android'
           
       - name: Install dependencies
@@ -56,7 +56,7 @@ jobs:
         uses: subosito/flutter-action@v2.13.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}  # 使用全局版本变量
-          cache: true
+          cache: false
           cache-key: 'flutter-${{ env.FLUTTER_VERSION }}-windows'
           
       - name: Enable Desktop
