@@ -30,7 +30,7 @@ jobs:
 
       - name: Clone Flutter SDK
         run: |
-          git clone https://github.com/flutter/flutter.git -b 3.24.5 --depth 1
+          git clone https://github.com/flutter/flutter.git -b 3.38.3 --depth 1
           echo "$PWD/flutter/bin" >> $GITHUB_PATH
 
       - name: Accept licenses (optional)
