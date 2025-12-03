@@ -25,6 +25,8 @@ jobs:
   build-armgit:
     runs-on: ubuntu-24.04-arm
     steps:
+      - uses: actions/checkout@v4
+
       - name: Install dependencies
         run: sudo apt update && sudo apt install -y git clang cmake ninja-build pkg-config libgtk-3-dev
 
