@@ -37,7 +37,17 @@ jobs:
         run: echo "y" | flutter doctor --android-licenses || true
 
       - name: Verify
-        run: flutter --version      
+        run: flutter --version  
+
+      - name: Enable Linux Desktop
+        run: flutter config --enable-linux-desktop
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Linux ARM64
+        run: flutter build linux --release --target-platform=linux-arm64
+
 
   build-android:
     runs-on: ubuntu-latest
