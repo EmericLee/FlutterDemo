@@ -16,13 +16,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+     
       - name: Setup Flutter
         uses: subosito/flutter-action@v2.13.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}  # 使用全局版本变量
-          cache: true
-          cache-key: 'flutter-${{ env.FLUTTER_VERSION }}-android'
+          cache: false
+          flutter-pub-get: false
+
+      - name: Check
+        run: |
+          flutter doctor -v
+          flutter --version
           
       - name: Install dependencies
         run: flutter pub get
@@ -56,7 +61,7 @@ jobs:
         uses: subosito/flutter-action@v2.13.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}  # 使用全局版本变量
-          cache: true
+          cache: false
           cache-key: 'flutter-${{ env.FLUTTER_VERSION }}-windows'
           
       - name: Enable Desktop
