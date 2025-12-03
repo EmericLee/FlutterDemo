@@ -1,7 +1,7 @@
 name: All Platform Build
 
 env:
-  FLUTTER_VERSION: '3.24.5'  # 全局版本变量，便于统一管理
+  FLUTTER_VERSION: '3.38.3'  # 全局版本变量，便于统一管理
 
 on:
   workflow_dispatch: # 手动触发
@@ -21,8 +21,7 @@ jobs:
         uses: subosito/flutter-action@v2.13.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}  # 使用全局版本变量
-          cache: false
-          flutter-pub-get: false
+          cache: true
 
       - name: Check
         run: |
@@ -61,7 +60,7 @@ jobs:
         uses: subosito/flutter-action@v2.13.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}  # 使用全局版本变量
-          cache: false
+          cache: true
           cache-key: 'flutter-${{ env.FLUTTER_VERSION }}-windows'
           
       - name: Enable Desktop
