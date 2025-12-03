@@ -1,5 +1,4 @@
-name: All Platform Build
-
+name: Build Terminal2
 env:
   FLUTTER_VERSION: '3.38.3'  # 全局版本变量，便于统一管理
 

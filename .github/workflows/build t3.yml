@@ -21,6 +21,21 @@ jobs:
       - run: flutter --version # 此时应该显示正确的ARM版本和Dart 3.17+
       - run: flutter pub get
       - run: flutter build linux --release --target-platform=linux-arm64
+  
+  build-armgit:
+    - name: Install dependencies
+      run: sudo apt update && sudo apt install -y git clang cmake ninja-build pkg-config libgtk-3-dev
+
+    - name: Clone Flutter SDK
+      run: |
+        git clone https://github.com/flutter/flutter.git -b 3.24.5 --depth 1
+        echo "$PWD/flutter/bin" >> $GITHUB_PATH
+
+    - name: Accept licenses (optional)
+      run: echo "y" | flutter doctor --android-licenses || true
+
+    - name: Verify
+      run: flutter --version      
 
   build-android:
     runs-on: ubuntu-latest
