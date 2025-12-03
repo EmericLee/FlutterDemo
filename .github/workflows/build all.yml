@@ -16,17 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/cache/clean@v4
-        with:
-          path: /opt/hostedtoolcache/flutter
-      
+     
       - name: Setup Flutter
         uses: subosito/flutter-action@v2.13.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}  # 使用全局版本变量
-          cache: flase
-          cache-key: 'flutter-${{ env.FLUTTER_VERSION }}-android'
+          cache: false
           flutter-pub-get: false
 
       - name: Check
