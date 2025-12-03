@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: flutter --version # 此时应该显示正确的ARM版本和Dart 3.17+
       - run: flutter pub get
-      - run: flutter build linux --release --target-platform=linux-arm64
+      - run: flutter build linux --release
   
   build-armgit:
     runs-on: ubuntu-24.04-arm
