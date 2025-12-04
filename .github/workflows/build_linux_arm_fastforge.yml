@@ -1,0 +1,148 @@
+name: Build Linux ARM with FastForge
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - '**.dart'
+      - 'pubspec.yaml'
+      - '.github/workflows/build_linux_arm_fastforge.yml'
+      - 'distribute_options.yaml'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: '3.24.5'
+  APP_NAME: 'flutter_demo'
+
+jobs:
+  build-linux-arm-fastforge:
+    name: Build Linux ARM64 with FastForge
+    runs-on: ubuntu-24.04-arm
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 1. 使用Git方式安装Flutter SDK
+      - name: Setup Flutter SDK from Git
+        run: |
+          # 克隆指定版本的Flutter SDK
+          git clone https://github.com/flutter/flutter.git --branch ${{ env.FLUTTER_VERSION }} --depth 1 /opt/flutter
+          
+          # 设置环境变量
+          echo "/opt/flutter/bin" >> $GITHUB_PATH
+          echo "${HOME}/.pub-cache/bin" >> $GITHUB_PATH
+          
+          # 验证安装
+          flutter --version
+          flutter doctor -v
+
+      # 2. 安装Linux桌面依赖
+      - name: Install Linux Desktop Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libgtk-3-dev \
+            liblzma-dev \
+            libstdc++-12-dev \
+            ruby \
+            ruby-dev \
+            build-essential \
+            file \
+            patchelf \
+            desktop-file-utils \
+            zsync \
+            squashfs-tools
+
+      # 3. 配置Flutter Linux桌面支持
+      - name: Setup Flutter for Linux Desktop
+        run: |
+          flutter config --enable-linux-desktop
+          flutter precache --linux
+
+      # 4. 安装Flutter依赖
+      - name: Install Flutter Dependencies
+        run: |
+          flutter pub get
+          flutter clean
+
+      # 5. 安装FastForge
+      - name: Install FastForge
+        run: |
+          # 安装FastForge CLI
+          dart pub global activate flutter_distributor
+          
+          # 验证安装
+          flutter_distributor --version
+
+      # 6. 创建FastForge配置（如果不存在）
+      - name: Setup FastForge Configuration
+        run: |
+          if [ ! -f "distribute_options.yaml" ]; then
+            cat > distribute_options.yaml << 'EOF'
+output: dist/
+releases:
+  - name: dev
+    jobs:
+      - name: release-linux-arm64
+        package:
+          platform: linux
+          target: appimage
+          build_args:
+            target-platform: linux-arm64
+            dart-define: APP_ENV=production
+        publish_to: none
+EOF
+          fi
+
+      # 7. 使用FastForge构建AppImage
+      - name: Build with FastForge
+        run: |
+          # 使用FastForge构建Linux ARM64 AppImage
+          flutter_distributor package \
+            --platform linux \
+            --target appimage \
+            --skip-publish
+          
+          # 显示构建结果
+          ls -la dist/
+
+      # 8. 验证AppImage
+      - name: Verify AppImage
+        run: |
+          # 检查生成的文件
+          find dist/ -name "*.AppImage" -type f
+          
+          # 验证AppImage格式
+          if [ -f dist/*.AppImage ]; then
+            file dist/*.AppImage
+            echo "AppImage build successful!"
+          else
+            echo "AppImage not found!"
+            exit 1
+          fi
+
+      # 9. 上传构建产物
+      - name: Upload AppImage Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64-appimage-fastforge
+          path: dist/*.AppImage
+          retention-days: 30
+
+      # 10. 可选：发布到GitHub Releases
+      - name: Create Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*.AppImage
+          draft: false
+          prerelease: false
