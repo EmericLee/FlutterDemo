@@ -1,0 +1,76 @@
+# AppImage 构建配置文件
+appId: com.example.flutter_demo
+appName: flutter_demo
+appNameUpper: FLUTTER_DEMO
+binaryName: flutter_demo
+version: 1.0.0
+buildVersion: 1.0.0
+
+# 应用详细信息
+info:
+  id: com.example.flutter_demo
+  name: Flutter Demo
+  version: 1.0.0
+  description: A Flutter Demo Application
+  author: Flutter Demo Team
+  homepage: https://github.com/yourusername/flutter_demo
+
+# 桌面文件配置
+desktop:
+  fileName: flutter_demo.desktop
+  Name: Flutter Demo
+  Comment: A Flutter Demo Application
+  Exec: flutter_demo
+  Icon: flutter_demo
+  Terminal: false
+  Type: Application
+  Categories: Utility;Development;
+  StartupNotify: true
+  Keywords: flutter;demo;application
+
+# 图标配置
+icons:
+  - filename: flutter_demo.png
+    source: assets/icon512.png
+    sizes: [256, 512]
+
+# 构建配置
+build:
+  # 目标架构
+  target: arm64
+  
+  # 包含的额外库文件
+  include:
+    - libgtk-3.so.0
+    - liblzma.so.5
+    - libstdc++.so.6
+    - libepoxy.so.0
+    - libpango-1.0.so.0
+    - libcairo.so.2
+    - libgdk_pixbuf-2.0.so.0
+  
+  # 排除的库文件 (系统提供的)
+  exclude:
+    - libxcb.so.1
+    - libEGL.so.1
+    - libGL.so.1
+    - libGLX.so.0
+    - libGLdispatch.so.0
+
+# AppImage 特定配置
+appimage:
+  # 压缩类型
+  compression: gzip
+  
+  # 更新信息
+  updateInformation: 
+    type: zsync
+    url: https://github.com/yourusername/flutter_demo/releases/latest/download/flutter_demo-linux-arm64.AppImage.zsync
+
+# 输出配置
+output:
+  # 输出文件名模板
+  filename: "${appName}-${version}-linux-${target}.AppImage"
+  
+  # 输出目录
+  directory: "dist"
