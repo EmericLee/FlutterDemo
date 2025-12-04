@@ -1,4 +1,4 @@
-name: Build by fastforge
+name: Build Linux ARM AppImage with FastForge
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - '**.dart'
       - 'pubspec.yaml'
       - '.github/workflows/build_linux_arm.yml'
-      - 'fastlane/**'
+      - 'distribute_options.yaml'
   pull_request:
     branches: [main, master]
   workflow_dispatch: # 允许手动触发
@@ -34,7 +34,7 @@ jobs:
           echo "/opt/flutter/bin" >> $GITHUB_PATH
 
 
-      # 2. 安装Linux桌面依赖
+      # 2. 安装Linux桌面依赖和FastForge所需工具
       - name: Install Linux Desktop Dependencies
         run: |
           sudo apt-get update
@@ -46,9 +46,12 @@ jobs:
             libgtk-3-dev \
             liblzma-dev \
             libstdc++-12-dev \
-            ruby \
-            ruby-dev \
-            build-essential
+            build-essential \
+            file \
+            patchelf \
+            desktop-file-utils \
+            zsync \
+            squashfs-tools
 
       # 3. 配置Flutter Linux桌面支持
       - name: Setup Flutter for Linux Desktop
@@ -64,84 +67,64 @@ jobs:
           flutter pub get
           flutter clean
 
-      # 5. 安装Fastlane
-      - name: Install Fastlane
+      # 5. 安装FastForge (flutter_distributor)
+      - name: Install FastForge
         run: |
-          # 安装Fastlane
-          sudo gem install fastlane -NV
-          
-          # 验证安装
-          fastlane --version
+          # 安装FastForge CLI
+          dart pub global activate fastforge
+          fastforge --version
 
-      # 6. 安装AppImage打包工具
-      - name: Install AppImage Tool
-        run: |
-          # 下载AppImage工具
-          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-aarch64.AppImage -O /tmp/appimagetool.AppImage
-          chmod +x /tmp/appimagetool.AppImage
-          
-          # 解压AppImage工具
-          cd /tmp
-          ./appimagetool.AppImage --appimage-extract
-          echo "/tmp/squashfs-root/usr/bin" >> $GITHUB_PATH
 
-      # 7. 使用Fastlane构建和打包
-      - name: Build with Fastlane
+      # 7. 创建AppImage构建配置
+
+      # 8. 使用FastForge构建AppImage
+      - name: Build AppImage with FastForge
         run: |
-          if [ ! -f "fastlane/Fastfile" ]; then
-            mkdir -p fastlane
-            cat > fastlane/Fastfile << 'EOF'
-            default_platform(:linux)
+          # 使用FastForge构建Linux ARM64 AppImage
+          flutter_distributor package \
+            --platform linux \
+            --target appimage \
+            --skip-publish
+          
+          # 显示构建结果
+          echo "Build completed. Checking output:"
+          ls -la dist/
+
+      # 9. 验证和优化AppImage
+      - name: Validate and Optimize AppImage
+        run: |
+          # 查找生成的AppImage
+          APPIMAGE_FILE=$(find dist/ -name "*.AppImage" -type f | head -n1)
+          
+          if [ -n "$APPIMAGE_FILE" ]; then
+            echo "Found AppImage: $APPIMAGE_FILE"
             
-            platform :linux do
-              desc "Build Linux ARM64 AppImage"
-              lane :build_arm64 do
-                # 构建Flutter Linux ARM64应用
-                sh("flutter build linux --release --target-platform=linux-arm64")
-                
-                # 创建AppImage目录结构
-                sh("mkdir -p AppDir/usr/bin")
-                sh("mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps")
-                sh("mkdir -p AppDir/usr/share/applications")
-                
-                # 复制应用文件
-                sh("cp -r build/linux/arm64/release/bundle/* AppDir/usr/bin/")
-                
-                # 创建.desktop文件
-                sh('cat > AppDir/usr/share/applications/flutter_demo.desktop << EOL
-                [Desktop Entry]
-                Name=Flutter Demo
-                Comment=A Flutter Demo Application
-                Exec=flutter_demo
-                Icon=flutter_demo
-                Terminal=false
-                Type=Application
-                Categories=Utility;
-                EOL')
-                
-                # 创建符号链接
-                sh("ln -sf usr/share/applications/flutter_demo.desktop AppDir/")
-                
-                # 打包为AppImage
-                sh("appimagetool AppDir ${APP_NAME}-linux-arm64.AppImage")
-                
-                # 创建输出目录
-                sh("mkdir -p dist")
-                sh("mv ${APP_NAME}-linux-arm64.AppImage dist/")
-              end
-            end
-            EOF
+            # 验证文件类型
+            file "$APPIMAGE_FILE"
+            
+            # 检查可执行权限
+            chmod +x "$APPIMAGE_FILE"
+            
+            # 显示AppImage信息
+            echo "AppImage size: $(du -h "$APPIMAGE_FILE" | cut -f1)"
+            
+            # 移动到标准位置
+            mkdir -p output
+            mv "$APPIMAGE_FILE" output/${APP_NAME}-linux-arm64.AppImage
+            
+            echo "AppImage build successful!"
+          else
+            echo "AppImage not found!"
+            ls -la dist/
+            exit 1
           fi
-          
-          # 运行Fastlane构建
-          fastlane linux build_arm64
 
-      # 8. 上传构建产物
+      # 10. 上传构建产物
       - name: Upload AppImage Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-arm64-appimage
-          path: dist/*.AppImage
+          name: linux-arm64-appimage-fastforge
+          path: output/*.AppImage
           retention-days: 30
 
       # 9. 可选：发布到GitHub Releases
@@ -149,6 +132,6 @@ jobs:
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/*.AppImage
+          files: output/*.AppImage
           draft: false
           prerelease: false
