@@ -33,9 +33,10 @@ jobs:
           echo "/opt/flutter/bin" >> $GITHUB_PATH
 
 
-      # 2. 安装Linux桌面依赖和FastForge所需工具
-      - name: Install Linux Desktop Dependencies
+      # 2. 安装Linux桌面依赖 (旧版本兼容)
+      - name: Install Linux Desktop Dependencies (Legacy Compatible)
         run: |
+          # 使用旧的软件包版本降低GLIBC要求
           sudo apt-get update
           sudo apt-get install -y \
             clang \
@@ -44,14 +45,18 @@ jobs:
             pkg-config \
             libgtk-3-dev \
             liblzma-dev \
-            libstdc++-12-dev \
+            libstdc++-10-dev \    # 降级到GCC 10
             build-essential \
             file \
             patchelf \
             desktop-file-utils \
             zsync \
             squashfs-tools \
-            libfuse2t64
+            libfuse2t64 \
+            --no-install-recommends
+            
+          # 检查GCC版本
+          gcc --version
 
       # 3. 配置Flutter Linux桌面支持
       - name: Setup Flutter for Linux Desktop
