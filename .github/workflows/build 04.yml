@@ -59,7 +59,7 @@ jobs:
           echo "$HOME/bin/squashfs-root/usr/bin" >> $GITHUB_PATH
 
       - name: Run flutter_distributor to generate AppImage
-        run: dart run flutter_distributor:build --targets=linux-appimage
+        run: dart run flutter_distributor build --targets=linux-appimage
 
       - name: Upload AppImage as artifact
         uses: actions/upload-artifact@v4
