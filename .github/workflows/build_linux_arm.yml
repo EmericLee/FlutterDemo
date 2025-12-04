@@ -19,7 +19,9 @@ jobs:
   build-linux-arm:
     name: Build Linux ARM64 AppImage
     runs-on: ubuntu-24.04-arm # 使用官方ARM架构Runner
-    
+    permissions:
+      contents: write
+          
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
