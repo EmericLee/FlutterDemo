@@ -83,8 +83,7 @@ jobs:
           # 使用FastForge构建Linux ARM64 AppImage
           fastforge package \
             --platform linux \
-            --target appimage \
-            --skip-publish
+            --target appimage
           
           # 显示构建结果
           echo "Build completed. Checking output:"
