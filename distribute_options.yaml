@@ -1,4 +1,5 @@
 output: dist/
+
 releases:
   - name: dev
     jobs:
@@ -8,21 +9,7 @@ releases:
           target: appimage
           build_args:
             target-platform: linux-arm64
-            dart-define: APP_ENV=production
           publish_to: none
-          # AppImage 特殊配置
-          extra_options:
-            appId: com.example.flutter_demo
-            appName: flutter_demo
-            displayName: Flutter Demo
-            description: A Flutter Demo Application
-            homepage: https://github.com/yourusername/flutter_demo
-            authors:
-              - Flutter Demo Team
-            keywords:
-              - flutter
-              - demo
-              - application
 
   - name: stable
     jobs:
@@ -32,18 +19,4 @@ releases:
           target: appimage
           build_args:
             target-platform: linux-arm64
-            dart-define: APP_ENV=production
           publish_to: none
-          # AppImage 特殊配置
-          extra_options:
-            appId: com.example.flutter_demo
-            appName: flutter_demo
-            displayName: Flutter Demo
-            description: A Flutter Demo Application
-            homepage: https://github.com/yourusername/flutter_demo
-            authors:
-              - Flutter Demo Team
-            keywords:
-              - flutter
-              - demo
-              - application
