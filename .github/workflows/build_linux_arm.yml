@@ -1,0 +1,74 @@
+name: Build Linux ARM AppImage by fastforge
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - '**.dart'
+      - 'pubspec.yaml'
+      - '.github/workflows/build_linux_arm.yml'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  build:
+    name: Build AppImage on ARM
+    runs-on: ubuntu-24.04-arm # 使用ARM架构的官方Runner
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # 1. 使用Git方式安装Flutter SDK (确保ARM兼容性)
+      - name: Setup Flutter SDK from Git
+        run: |
+          git clone https://github.com/flutter/flutter.git --branch 3.38.3 --depth 1 /opt/flutter
+          echo "${HOME}/.pub-cache/bin" >> $GITHUB_PATH
+          echo "/opt/flutter/bin" >> $GITHUB_PATH
+
+      - name: Check Flutter Version
+        run: flutter --version
+
+      - name: Install Linux Desktop Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libgtk-3-dev \
+            liblzma-dev \
+            libstdc++-12-dev
+
+      - name: Setup Flutter for Linux Desktop
+        run: |
+          flutter config --enable-linux-desktop
+          flutter precache --linux
+
+      - name: Get Flutter Packages
+        run: flutter pub get
+
+      # 2. 安装并配置Fastforge (Flutter Distributor)
+      - name: Install Fastforge
+        run: dart pub global activate fastforge
+
+      # - name: Configure Fastforge Package Name (可选)
+      #   run: |
+      #     # 如果应用二进制名称不是默认的，你可能需要创建或调整AppRun脚本。
+      #     # 此处示例为检查是否存在自定义配置，如有需要可在此步骤创建。
+      #     echo "确保AppImage打包配置正确。"
+
+      - name: Build and Package with Fastforge
+        run: |
+          fastforge release --name linux-arm
+        env:
+          # 如果配置中使用了需要API Key的分发平台（如github），在此处注入密钥
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload AppImage Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-arm-appimage
+          path: dist/*.AppImage # Fastforge默认的输出目录和文件格式[citation:4]
+          retention-days: 7
