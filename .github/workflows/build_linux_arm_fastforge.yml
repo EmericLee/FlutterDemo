@@ -84,24 +84,6 @@ jobs:
           flutter_distributor --version
 
       # 6. 创建FastForge配置（如果不存在）
-      - name: Setup FastForge Configuration
-        run: |
-          if [ ! -f "distribute_options.yaml" ]; then
-            cat > distribute_options.yaml << 'EOF'
-output: dist/
-releases:
-  - name: dev
-    jobs:
-      - name: release-linux-arm64
-        package:
-          platform: linux
-          target: appimage
-          build_args:
-            target-platform: linux-arm64
-            dart-define: APP_ENV=production
-        publish_to: none
-EOF
-          fi
 
       # 7. 使用FastForge构建AppImage
       - name: Build with FastForge

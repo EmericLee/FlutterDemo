@@ -1,4 +1,4 @@
-name: Build Linux ARM AppImage with Fastlane
+name: Build by fastforge
 
 on:
   push:
@@ -88,7 +88,6 @@ jobs:
       # 7. 使用Fastlane构建和打包
       - name: Build with Fastlane
         run: |
-          # 创建Fastlane配置（如果不存在）
           if [ ! -f "fastlane/Fastfile" ]; then
             mkdir -p fastlane
             cat > fastlane/Fastfile << 'EOF'
