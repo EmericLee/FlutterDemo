@@ -41,7 +41,13 @@ jobs:
           
           # 4. 删除可能存在的其他源配置，防止干扰
           rm -f /etc/apt/sources.list.d/*
-          
+
+          # 4. 更新并执行 dist-upgrade
+          # 【关键点】：dist-upgrade 会强制同步（降级/升级）系统内的 libc6 等基础库
+          # 确保它们与 archive 源里的版本完全一致，从而允许安装 dev 包。
+          apt-get update
+          apt-get -y dist-upgrade          
+
       # 1. 初始化构建环境（在容器内）
       - name: Install System Dependencies
         run: |
