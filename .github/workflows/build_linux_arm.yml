@@ -53,7 +53,6 @@ jobs:
       - name: Install Fastforge
         run: |
           dart pub global activate fastforge
-          dart pub global activate flutter_distributor_linux
 
       # - name: Configure Fastforge Package Name (可选)
       #   run: |
