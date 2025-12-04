@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-24.04-arm # 使用ARM架构的官方Runner
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # 1. 使用Git方式安装Flutter SDK (确保ARM兼容性)
       - name: Setup Flutter SDK from Git
@@ -67,7 +67,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload AppImage Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-arm-appimage
           path: dist/*.AppImage # Fastforge默认的输出目录和文件格式[citation:4]
