@@ -49,7 +49,8 @@ jobs:
             patchelf \
             desktop-file-utils \
             zsync \
-            squashfs-tools
+            squashfs-tools \
+            libfuse2t64
 
       # 3. 配置Flutter Linux桌面支持
       - name: Setup Flutter for Linux Desktop
