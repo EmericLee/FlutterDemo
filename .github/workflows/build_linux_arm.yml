@@ -3,6 +3,8 @@ name: Build  with FastForge
 on:
   push:
     branches: [main, master]
+    tags:
+      - "v*.*.*"  # 当推送v开头的标签时触发CI/CD
     paths:
       # - '**.dart'
       # - 'pubspec.yaml'
@@ -99,9 +101,9 @@ jobs:
         run: |
           APPIMAGE_FILE=$(find dist/ -name "*.AppImage" -type f | head -n1)
           if [ -n "$APPIMAGE_FILE" ]; then
-            echo "Found AppImage: $APPIMAGE_FILE"
-            file "$APPIMAGE_FILE"
-            chmod +x "$APPIMAGE_FILE"
+            # echo "Found AppImage: $APPIMAGE_FILE"
+            # file "$APPIMAGE_FILE"
+            # chmod +x "$APPIMAGE_FILE"
             echo "AppImage size: $(du -h "$APPIMAGE_FILE" | cut -f1)"
             mkdir -p output
             mv "$APPIMAGE_FILE" output/${APP_NAME}-linux-arm64.AppImage
@@ -122,6 +124,7 @@ jobs:
 
       # 9. 可选：发布到GitHub Releases
       - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')  # 仅在标签触发时创建Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
