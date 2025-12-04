@@ -56,7 +56,7 @@ jobs:
           wget -c "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-aarch64.AppImage"
           chmod +x appimagetool-aarch64.AppImage
           ./appimagetool-aarch64.AppImage --appimage-extract
-          echo "$HOME/bin/squashfs-root/usr/bin" >> $Github_PATH
+          echo "$HOME/bin/squashfs-root/usr/bin" >> $GITHUB_PATH
 
       - name: Run flutter_distributor to generate AppImage
         run: dart run flutter_distributor:build --targets=linux-appimage
