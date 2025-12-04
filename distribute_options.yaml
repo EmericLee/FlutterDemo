@@ -1,17 +1,12 @@
-output: dist/ # 打包产物的输出目录
-
+output: dist/
 releases:
-  - name: linux-arm # 发布名称，与工作流中调用的 --name 参数对应
+  - name: dev
     jobs:
-      - name: build-linux-appimage
+      - name: release-linux-arm64
         package:
           platform: linux
           target: appimage
           build_args:
-            # 关键：指定目标平台为linux-arm64
             target-platform: linux-arm64
-            # 可以添加其他Flutter构建参数，例如：
-            # dart-define: APP_ENV=production
-            # release: true
-        # 如果不需要立即发布到某个平台，可以移除 publish_to 字段
-        # publish_to: github # 例如，可以配置直接发布到GitHub Releases[citation:10]
+            dart-define: APP_ENV=production
+          publish_to: none

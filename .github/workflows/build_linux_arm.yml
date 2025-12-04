@@ -72,7 +72,7 @@ jobs:
         run: |
           # 安装FastForge CLI
           dart pub global activate fastforge
-          fastforge --version
+          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
 
 
       # 7. 创建AppImage构建配置
