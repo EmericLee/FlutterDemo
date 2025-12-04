@@ -81,7 +81,7 @@ jobs:
       - name: Build AppImage with FastForge
         run: |
           # 使用FastForge构建Linux ARM64 AppImage
-          flutter_distributor package \
+          fastforge package \
             --platform linux \
             --target appimage \
             --skip-publish
