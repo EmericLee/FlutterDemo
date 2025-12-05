@@ -1,0 +1,23 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "发布 Patch 版本 (1.0.x)",
+            "type": "shell",
+            "command": ".\\scripts\\release.ps1 -Type patch",
+            "problemMatcher": [],
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "发布 Minor 版本 (1.x.0)",
+            "type": "shell",
+            "command": ".\\scripts\\release.ps1 -Type minor",
+            "problemMatcher": [],
+            "group": "none"
+        }
+    ]
+}
