@@ -2,8 +2,8 @@ name: "Build All"
 
 on:
   push:
-    tags:libstdc
-      - "vb*.*.*"  # 当推送v开头的标签时触发CI/CD
+    tags:
+      - "v-none-*.*.*"  # 当推送v开头的标签时触发CI/CD
   workflow_dispatch:  # 允许手动触发工作流
 
 jobs:
