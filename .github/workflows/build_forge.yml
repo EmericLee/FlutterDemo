@@ -1,4 +1,4 @@
-name: "Flutter & FastForge"
+name: "Build with FastForge"
 on:
   push:
     branches: [main, master]
