@@ -22,7 +22,8 @@ void main(List<String> args) {
   final status = runCommand('git', ['status', '--porcelain']);
   if (status.stdout.toString().trim().isNotEmpty) {
     print('Git 工作区不干净。 run stash 暂存更改。');
-    runCommand('git', ['stash']);
+    runCommand('git', ['add', '.']);
+    // runCommand('git', ['stash']);
   }else{
     print('✅ Git 工作区干净，继续发布流程...');
   }
@@ -46,7 +47,7 @@ void main(List<String> args) {
 
     // 5. Git 提交与打 Tag
     print('📦 执行 Git 操作...');
-    runCommand('git', ['add', '.']);
+    // runCommand('git', ['add', '.']);
 
     final commitMsg = 'Release version v$newVersion';
     runCommand('git', ['commit', '-m', commitMsg]);
