@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'directory_list_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -125,6 +126,17 @@ class _MyHomePageState extends State<MyHomePage> {
                 fontSize: 64,
                 fontWeight: FontWeight.w500,
               ),
+            ),
+            const SizedBox(height: 40),
+            // 目录列表页面按钮
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DirectoryListPage()),
+                );
+              },
+              child: const Text('打开目录列表'),
             ),
           ],
         ),
