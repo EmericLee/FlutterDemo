@@ -130,32 +130,24 @@ class TimeAnalyzer {
       RegExp(
           r'(\d{4})[-\s/_:](\d{2})[-\s/_:](\d{2})\s+(\d{2}):(\d{2}):(\d{2})'),
       // YYYYMMDD HH:MM:SS 格式，例如 "20120202 12:00:00"
+      RegExp(r'(\d{4})(\d{2})(\d{2})[_-\s]?(\d{2}):(\d{2}):(\d{2})'),
       // YYYYMMDD_HHMMSS 格式，例如 "20120202_120000"
-      RegExp(r'(\d{4})(\d{2})(\d{2})\s?(\d{2}):(\d{2}):(\d{2})'),
       // YYYYMMDDHHMMSS 格式，例如 "20120202120000"
-      RegExp(r'(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})'),
+      RegExp(r'(\d{4})(\d{2})(\d{2})[_-\s]?(\d{2})(\d{2})(\d{2})'),
+      // YYYY-MM-DD 格式，例如 "2012-02-02",分隔符可以是“-" "/" "_" ":" “ ”
+      RegExp(r'(\d{4})[-_:/\s](\d{2})[-_:/\s](\d{2})'),
       // YYYYMMDD 格式，例如 "20120202"
       RegExp(r'(\d{4})(\d{2})(\d{2})'),
-      // YYYY-MM-DD 格式，例如 "2012-02-02"
-      RegExp(r'(\d{4})-(\d{2})-(\d{2})'),
-      // YYYY/MM/DD 格式，例如 "2012/02/02"
-      RegExp(r'(\d{4})/(\d{2})/(\d{2})'),
     ];
 
     for (final pattern in timePatterns) {
       final match = pattern.firstMatch(filename);
       if (match != null) {
         try {
-          // 处理Unix时间戳
-          final timestampStr = match.group(0) ?? '';
-          if (timestampStr.length >= 10 && timestampStr.length <= 13) {
-            logger.d('从文件名中解析到Unix时间戳: $timestampStr');
-            final timestamp = int.parse(timestampStr);
-            return DateTime.fromMillisecondsSinceEpoch(
-                timestampStr.length == 10 ? timestamp * 1000 : timestamp);
-          }
-
           // 处理其他时间格式
+          logger.d(
+              '匹配: ${match.group(0)} ${match.group(1)} ${match.group(2)} ${match.group(3)} ${match.group(4)} ${match.group(5)} ${match.group(6)}');
+          DateTime? parsedTime;
           if (match.groupCount >= 3) {
             final yearStr = match.group(1);
             final monthStr = match.group(2);
@@ -176,12 +168,15 @@ class TimeAnalyzer {
                   final hour = int.parse(hourStr);
                   final minute = int.parse(minuteStr);
                   final second = int.parse(secondStr);
-                  return DateTime(year, month, day, hour, minute, second);
+                  parsedTime = DateTime(year, month, day, hour, minute, second);
                 }
+              } else {
+                // 没有时分秒或时分秒信息不完整，使用默认值
+                parsedTime = DateTime(year, month, day);
               }
-
-              // 没有时分秒或时分秒信息不完整，使用默认值
-              return DateTime(year, month, day);
+            }
+            if (parsedTime != null && isTimeValid(parsedTime)) {
+              return parsedTime;
             }
           }
         } catch (e) {
@@ -193,14 +188,14 @@ class TimeAnalyzer {
 
     // Unix时间戳（10位或13位）
     final matchUnix = RegExp(r'(\d{10,13})').firstMatch(filename);
+    logger.d('匹配 UNIX: ${matchUnix?.group(0)}');
     if (matchUnix != null) {
       final timestampStr = matchUnix.group(0) ?? '';
-      logger.d('从文件名中解析到Unix时间戳: $timestampStr');
       final timestamp = int.parse(timestampStr);
       return DateTime.fromMillisecondsSinceEpoch(
           timestampStr.length == 10 ? timestamp * 1000 : timestamp);
     }
-    
+
     return null;
   }
 

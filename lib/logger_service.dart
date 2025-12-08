@@ -15,7 +15,7 @@ class LoggerService {
       printer: PrettyPrinter(
         methodCount: 0,
         errorMethodCount: 3,
-        lineLength: 100,
+        lineLength: 60,
         colors: true,
         printEmojis: true,
         dateTimeFormat: DateTimeFormat.none,

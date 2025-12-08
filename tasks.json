@@ -4,7 +4,7 @@
         {
             "label": "发布 Patch 版本 (1.0.x)",
             "type": "shell",
-            "command": ".\\scripts\\release.ps1 -Type patch",
+            "command": "dart run release.dart",
             "problemMatcher": [],
             "group": "none",
             "presentation": {

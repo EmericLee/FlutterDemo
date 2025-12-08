@@ -7,8 +7,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:flutter_demo/main.dart';
+import 'package:flutter_demo/time_analyzer.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
@@ -26,5 +26,142 @@ void main() {
     // Verify that our counter has incremented.
     expect(find.text('0'), findsNothing);
     expect(find.text('1'), findsOneWidget);
+  });
+
+  group('extractFromName tests', () {
+    test('should extract date from YYYY/MM/DD HH:MM:SS format', () {
+      final result = TimeAnalyzer.extractFromName('D:/Photos/2023/06/05/2023/06/05 10:15:30.jpg');
+      expect(result, isNotNull);
+      expect(result?.year, 2023);
+      expect(result?.month, 6);
+      expect(result?.day, 5);
+      expect(result?.hour, 10);
+      expect(result?.minute, 15);
+      expect(result?.second, 30);
+    });
+
+    test('should extract date from YYYY-MM-DD HH:MM:SS format', () {
+      final result = TimeAnalyzer.extractFromName('D:/Photos/2023-06-05 10:15:30.jpg');
+      expect(result, isNotNull);
+      expect(result?.year, 2023);
+      expect(result?.month, 6);
+      expect(result?.day, 5);
+      expect(result?.hour, 10);
+      expect(result?.minute, 15);
+      expect(result?.second, 30);
+    });
+
+    test('should extract date from YYYYMMDD HH:MM:SS format', () {
+      final result = TimeAnalyzer.extractFromName('D:/Photos/20230605 10:15:30.jpg');
+      expect(result, isNotNull);
+      expect(result?.year, 2023);
+      expect(result?.month, 6);
+      expect(result?.day, 5);
+      expect(result?.hour, 10);
+      expect(result?.minute, 15);
+      expect(result?.second, 30);
+    });
+
+    test('should extract date from YYYYMMDD_HHMMSS format', () {
+      final result = TimeAnalyzer.extractFromName('D:/Photos/20230605_101530.jpg');
+      expect(result, isNotNull);
+      expect(result?.year, 2023);
+      expect(result?.month, 6);
+      expect(result?.day, 5);
+      expect(result?.hour, 10);
+      expect(result?.minute, 15);
+      expect(result?.second, 30);
+    });
+
+    test('should extract date from YYYYMMDDHHMMSS format', () {
+      final result = TimeAnalyzer.extractFromName('D:/Photos/20230605101530.jpg');
+      expect(result, isNotNull);
+      expect(result?.year, 2023);
+      expect(result?.month, 6);
+      expect(result?.day, 5);
+      expect(result?.hour, 10);
+      expect(result?.minute, 15);
+      expect(result?.second, 30);
+    });
+
+    test('should extract date from YYYYMMDD format', () {
+      final match = RegExp(r'(\d{4})(\d{2})(\d{2})').firstMatch('20230605');
+      debugPrint('匹配: ${match?.group(0)} ${match?.group(1)} ${match?.group(2)} ${match?.group(3)}');
+      debugPrint('匹配: ${match?.group(0)} ${match?.group(1)} ${match?.group(2)} ${match?.group(3)}');
+      debugPrint('匹配: ${match?.group(0)} ${match?.group(1)} ${match?.group(2)} ${match?.group(3)}');
+      debugPrint('匹配: ${match?.group(0)} ${match?.group(1)} ${match?.group(2)} ${match?.group(3)}');
+      // String str1 = "abc 20230605.jpg ${match?.group(0)}";
+      // expect(match, isNotNull);
+      // expect(match?.group(1), '2023');
+      // expect(match?.group(2), '06');
+      // expect(match?.group(3), '05');
+
+      final result = TimeAnalyzer.extractFromName('D:/Photos/20230605.jpg');
+      expect(result, isNotNull);
+      expect(result?.year, 2023);
+      expect(result?.month, 6);
+      expect(result?.day, 5);
+      expect(result?.hour, 0);
+      expect(result?.minute, 0);
+      expect(result?.second, 0);
+    });
+
+    test('should extract date from YYYY-MM-DD format', () {
+      final result = TimeAnalyzer.extractFromName('D:/Photos/2023-06-05.jpg');
+      expect(result, isNotNull);
+      expect(result?.year, 2023);
+      expect(result?.month, 6);
+      expect(result?.day, 5);
+      expect(result?.hour, 0);
+      expect(result?.minute, 0);
+      expect(result?.second, 0);
+    });
+
+    test('should extract date from YYYY/MM/DD format', () {
+      final result = TimeAnalyzer.extractFromName('D:/Photos/2023/06/05.jpg');
+      expect(result, isNotNull);
+      expect(result?.year, 2023);
+      expect(result?.month, 6);
+      expect(result?.day, 5);
+      expect(result?.hour, 0);
+      expect(result?.minute, 0);
+      expect(result?.second, 0);
+    });
+
+    test('should extract date from 10-digit Unix timestamp', () {
+      final result = TimeAnalyzer.extractFromName('D:/Photos/1685955357.jpg');
+      expect(result, isNotNull);
+      // 1685955357 对应的时间是 2023-06-05 10:15:57
+      expect(result?.year, 2023);
+      expect(result?.month, 6);
+      expect(result?.day, 5);
+      expect(result?.hour, 16);
+      expect(result?.minute, 55);
+      expect(result?.second, 57);
+    });
+
+    test('should extract date from 13-digit Unix timestamp', () {
+      final result = TimeAnalyzer.extractFromName('D:/Photos/1685955357378.jpg');
+      expect(result, isNotNull);
+      // 1685955357378 对应的时间是 2023-06-05 10:15:57.378
+      expect(result?.year, 2023);
+      expect(result?.month, 6);
+      expect(result?.day, 5);
+      expect(result?.hour, 16);
+      expect(result?.minute, 55);
+      expect(result?.second, 57);
+      expect(result?.millisecond, 378);
+      debugPrint(result.toString());
+    });
+
+    test('should return null for filename without date', () {
+      final result = TimeAnalyzer.extractFromName('D:/Photos/photo.jpg');
+      expect(result, isNull);
+    });
+
+    test('should return null for invalid date format', () {
+      final result = TimeAnalyzer.extractFromName('D:/Photos/2023-13-40.jpg');
+      expect(result, isNull);
+    });
   });
 }
