@@ -39,26 +39,21 @@ class TimeAnalyzer {
   /// 分析文件的创建时间，并返回最佳的创建时间和分析方法
   /// 如果无法判断创建时间，则返回null和unknown方法
   static Future<(DateTime? suggestedTime, TimeAnalysisFrom suggestedFrom)>
-      analyzeSuggestedTime(File file) async {
+      _analyzeSuggestedTime(File file) async {
     // 1. 如果是图片，尝试从EXIF中提取创建时间
     if (isImageFile(file.path)) {
       final exifTime = await extractFromExif(file);
-      if (exifTime != null && isTimeValid(exifTime)) {
+      if (exifTime != null) {
         return (exifTime, TimeAnalysisFrom.exif);
-      } else {}
+      }
     }
 
     // 2. 尝试从文件名中解析时间
     final filenameTime = extractFromName(file.path);
-    if (filenameTime != null && isTimeValid(filenameTime)) {
+    if (filenameTime != null) {
       return (filenameTime, TimeAnalysisFrom.filename);
     }
 
-    // 3. 尝试其他方法判断创建时间
-    // 可以在这里添加更多的判断逻辑
-    // 例如：检查文件内容中的时间信息等
-
-    // 4. 无法判断创建时间
     return (null, TimeAnalysisFrom.unknown);
   }
 
@@ -144,39 +139,46 @@ class TimeAnalyzer {
       final match = pattern.firstMatch(filename);
       if (match != null) {
         try {
-          // 处理其他时间格式
-          logger.d(
-              '匹配: ${match.group(0)} ${match.group(1)} ${match.group(2)} ${match.group(3)} ${match.group(4)} ${match.group(5)} ${match.group(6)}');
-          DateTime? parsedTime;
+          //显示所有匹配组，包括null值，自动判断匹配元素数量
+          final groups = List<String?>.generate(
+              match.groupCount + 1, (i) => match.group(i));
+          logger.d('匹配组: $groups');
+
           if (match.groupCount >= 3) {
+            int year, month, day, hour, minute, second;
             final yearStr = match.group(1);
             final monthStr = match.group(2);
             final dayStr = match.group(3);
 
             if (yearStr != null && monthStr != null && dayStr != null) {
-              final year = int.parse(yearStr);
-              final month = int.parse(monthStr);
-              final day = int.parse(dayStr);
+              year = int.parse(yearStr);
+              month = int.parse(monthStr);
+              day = int.parse(dayStr);
 
               // 检查是否有时分秒信息
               if (match.groupCount >= 6) {
-                final hourStr = match.group(4);
-                final minuteStr = match.group(5);
-                final secondStr = match.group(6);
-
-                if (hourStr != null && minuteStr != null && secondStr != null) {
-                  final hour = int.parse(hourStr);
-                  final minute = int.parse(minuteStr);
-                  final second = int.parse(secondStr);
-                  parsedTime = DateTime(year, month, day, hour, minute, second);
-                }
+                hour = int.parse(match.group(4) ?? '00');
+                minute = int.parse(match.group(5) ?? '00');
+                second = int.parse(match.group(6) ?? '00');
               } else {
-                // 没有时分秒或时分秒信息不完整，使用默认值
-                parsedTime = DateTime(year, month, day);
+                hour = 0;
+                minute = 0;
+                second = 0;
               }
-            }
-            if (parsedTime != null && isTimeValid(parsedTime)) {
-              return parsedTime;
+
+              if (isValidDateTime(
+                  year: year,
+                  month: month,
+                  day: day,
+                  hour: hour,
+                  minute: minute,
+                  second: second)) {
+                final DateTime parsedTime =
+                    DateTime(year, month, day, hour, minute, second);
+                if (isValidDateRange(parsedTime)) {
+                  return parsedTime;
+                }
+              }
             }
           }
         } catch (e) {
@@ -192,8 +194,11 @@ class TimeAnalyzer {
     if (matchUnix != null) {
       final timestampStr = matchUnix.group(0) ?? '';
       final timestamp = int.parse(timestampStr);
-      return DateTime.fromMillisecondsSinceEpoch(
+      final DateTime parsedTime = DateTime.fromMillisecondsSinceEpoch(
           timestampStr.length == 10 ? timestamp * 1000 : timestamp);
+      if (isValidDateRange(parsedTime)) {
+        return parsedTime;
+      }
     }
 
     return null;
@@ -201,7 +206,7 @@ class TimeAnalyzer {
 
   /// 检查文件修改时间是否有问题
   /// 如果文件修改时间明显不合理（例如在1970年之前或未来很远的时间），则返回false
-  static bool isTimeValid(DateTime? time) {
+  static bool isValidDateRange(DateTime? time) {
     if (time == null) {
       return false;
     }
@@ -218,37 +223,42 @@ class TimeAnalyzer {
     }
   }
 
-  /// 分析并返回建议的文件修改时间
-  /// 在Flutter中，我们无法直接修改文件的修改时间
-  /// 需要使用平台特定的API来实现
-  /// 返回建议的修改时间，如果无法判断则返回null
-  // static Future<DateTime?> suggestFileModificationTime(File file) async {
-  //   // 分析文件的创建时间
-  //   final (DateTime? creationTime, TimeAnalysisFrom suggestedFrom) = await analyzeSuggestedTime(file);
+  static bool isValidDateTime({
+    required int year,
+    required int month,
+    required int day,
+    int hour = 0,
+    int minute = 0,
+    int second = 0,
+    int millisecond = 0,
+    int microsecond = 0,
+  }) {
+    if (month < 1 || month > 12) return false;
+    if (day < 1 || day > 31) return false;
 
-  //   if (creationTime != null) {
-  //     print('建议将文件 ${file.path} 的修改时间修正为: $creationTime');
-  //     return creationTime;
-  //   }
+    if (hour < 0 || hour > 23) return false;
+    if (minute < 0 || minute > 59) return false;
+    if (second < 0 || second > 59) return false;
+    if (millisecond < 0 || millisecond > 999) return false;
+    if (microsecond < 0 || microsecond > 999) return false;
 
-  //   print('无法判断文件 ${file.path} 的创建时间');
-  //   return null;
-  // }
+    return true;
+  }
 
   /// 分析单个文件的时间状态，返回完整的分析结果
   /// 包含原始时间、建议时间、状态和分析方法
   static Future<TimeAnalysisResult> analyzeFile(File file) async {
     final DateTime originalTime = file.statSync().modified;
     final (DateTime? suggestedTime, TimeAnalysisFrom suggestedFrom) =
-        await analyzeSuggestedTime(file);
+        await _analyzeSuggestedTime(file);
     TimeAnalysisStatus status = TimeAnalysisStatus.cannotJudge;
 
     // 尝试分析文件的创建时间并获取建议的修改时间
     if (suggestedTime == null) {
       status = TimeAnalysisStatus.cannotJudge;
-    } else if (!isTimeValid(suggestedTime)) {
+    } else if (!isValidDateRange(suggestedTime)) {
       status = TimeAnalysisStatus.cannotJudge;
-    } else if (suggestedTime != originalTime) {
+    } else if (suggestedTime.difference(originalTime).inMinutes.abs() > 1) {
       status = TimeAnalysisStatus.needsFix;
     } else {
       status = TimeAnalysisStatus.consistent;

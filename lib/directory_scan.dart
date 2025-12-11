@@ -313,16 +313,19 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
     } else {
       switch (result.status) {
         case TimeAnalysisStatus.consistent:
-          msgText = SelectableText('一致 ${_formatDateTime(result.suggestedTime)}');
+          msgText =
+              SelectableText('一致 ${_formatDateTime(result.suggestedTime)}');
           msgIcon =
               const Icon(Icons.check_circle, size: 12, color: Colors.green);
           break;
         case TimeAnalysisStatus.needsFix:
-          msgText = SelectableText('需要修正: ${_formatDateTime(result.suggestedTime)}');
+          msgText =
+              SelectableText('需要修正: ${_formatDateTime(result.suggestedTime)}');
           msgIcon = const Icon(Icons.warning, size: 12, color: Colors.orange);
           break;
         case TimeAnalysisStatus.cannotJudge:
-          msgText = SelectableText('无有效时间信息： ${_formatDateTime(result.suggestedTime)}');
+          msgText = SelectableText(
+              '无有效时间信息： ${_formatDateTime(result.suggestedTime)}');
           msgIcon = const Icon(Icons.help, size: 12, color: Colors.grey);
           break;
       }
@@ -466,49 +469,46 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
 
         // 文件列表
         Expanded(
-          child: Stack(
+          child: Column(
             children: [
-              _fileList.isEmpty
-                  ? const Center(child: Text('请选择一个目录'))
-                  : Scrollbar(
-                      controller: _scrollController,
-                      thumbVisibility: true,
-                      child: ListView.separated(
+              Expanded(
+                child: _fileList.isEmpty
+                    ? const Center(child: Text('请选择一个目录'))
+                    : Scrollbar(
                         controller: _scrollController,
-                        itemCount: _fileList.length,
-                        // 使用separated更高效地添加分隔线
-                        separatorBuilder: (context, index) =>
-                            const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          File file = _fileList[index];
-                          TimeAnalysisResult? analysisResult;
+                        thumbVisibility: true,
+                        child: ListView.separated(
+                          controller: _scrollController,
+                          itemCount: _fileList.length,
+                          // 使用separated更高效地添加分隔线
+                          separatorBuilder: (context, index) =>
+                              const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            File file = _fileList[index];
+                            TimeAnalysisResult? analysisResult;
 
-                          // 查找当前文件的时间分析结果
-                          if (index < _timeAnalysisResults.length) {
-                            analysisResult = _timeAnalysisResults[index];
-                          }
+                            // 查找当前文件的时间分析结果
+                            if (index < _timeAnalysisResults.length) {
+                              analysisResult = _timeAnalysisResults[index];
+                            }
 
-                          return _buildFileListTile(file, analysisResult);
-                        },
+                            return _buildFileListTile(file, analysisResult);
+                          },
+                        ),
                       ),
-                    ),
+              ),
               // 底部信息栏
               if (_fileList.isNotEmpty) ...[
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(8.0),
-                    color: Colors.grey[100],
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('总计: $_fileCount 个文件'),
-                        Text(
-                            '当前位置: ${_firstVisibleIndex + 1}/${_fileList.length}'),
-                      ],
-                    ),
+                Container(
+                  padding: const EdgeInsets.all(8.0),
+                  color: Colors.grey[100],
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('总计: $_fileCount 个文件'),
+                      Text(
+                          '当前位置: ${_firstVisibleIndex + 1}/${_fileList.length}'),
+                    ],
                   ),
                 ),
               ],
