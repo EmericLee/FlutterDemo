@@ -8,6 +8,14 @@ import 'logger_service.dart';
 import 'time_analyzer.dart';
 import 'notification_service.dart';
 
+/// 文件过滤类型枚举
+enum FileFilterType {
+  all,        // 显示所有文件
+  consistent, // 只显示一致的文件
+  needsFix,   // 只显示需要修正的文件
+  cannotJudge,// 只显示无法解析的文件
+}
+
 /// 目录列表页面（为了向后兼容而保留）
 class DirectoryListPage extends StatelessWidget {
   const DirectoryListPage({super.key});
@@ -56,6 +64,10 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
   int _firstVisibleIndex = 0;
   final ScrollController _scrollController = ScrollController();
 
+  // 过滤功能状态变量
+  FileFilterType _currentFilter = FileFilterType.all;
+  String _searchQuery = '';
+
   void safeSetState(VoidCallback fn) {
     if (mounted) {
       setState(fn);
@@ -63,6 +75,59 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
   }
 
   void onPressed() {}
+
+  // 设置过滤类型
+  void _setFilter(FileFilterType filter) {
+    safeSetState(() {
+      _currentFilter = filter;
+    });
+  }
+
+  // 更新搜索查询
+  void _updateSearchQuery(String query) {
+    safeSetState(() {
+      _searchQuery = query.toLowerCase();
+    });
+  }
+
+  // 获取过滤后的文件列表
+  List<File> get _filteredFileList {
+    if (_currentFilter == FileFilterType.all && _searchQuery.isEmpty) {
+      return _fileList;
+    }
+
+    return _fileList.where((file) {
+      // 搜索过滤
+      if (_searchQuery.isNotEmpty) {
+        final fileName = file.path.split(Platform.pathSeparator).last.toLowerCase();
+        if (!fileName.contains(_searchQuery)) {
+          return false;
+        }
+      }
+
+      // 状态过滤
+      if (_currentFilter != FileFilterType.all) {
+        final index = _fileList.indexOf(file);
+        if (index >= _fileListTimeAnalysised.length) {
+          return false;
+        }
+
+        final analysisResult = _fileListTimeAnalysised[index];
+        switch (_currentFilter) {
+          case FileFilterType.consistent:
+            return analysisResult.status == TimeAnalysisStatus.consistent;
+          case FileFilterType.needsFix:
+            return analysisResult.status == TimeAnalysisStatus.needsFix;
+          case FileFilterType.cannotJudge:
+            return analysisResult.status == TimeAnalysisStatus.cannotJudge;
+          default:
+            return true;
+        }
+      }
+
+      return true;
+    }).toList();
+  }
 
   @override
   void initState() {
@@ -76,7 +141,7 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
       }
     }
 
-    // 监听滚动位置
+    // 监听滚动位置 - 优化性能，减少setState调用
     _scrollController.addListener(() {
       final firstVisibleIndex =
           _scrollController.position.minScrollExtent == _scrollController.offset
@@ -86,8 +151,8 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
                       _fileList.length)
                   .floor();
 
-      if (firstVisibleIndex != _firstVisibleIndex) {
-        setState(() {
+      if (firstVisibleIndex != _firstVisibleIndex && mounted) {
+        safeSetState(() {
           _firstVisibleIndex = firstVisibleIndex;
         });
       }
@@ -125,6 +190,7 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
                 ),
               ),
 
+              // 扫描状态显示
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -133,6 +199,7 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
                 ),
                 child: Row(
                   children: [
+                    //scanning ....
                     if (_isScanning) ...[
                       SizedBox(
                         width: 16,
@@ -147,16 +214,7 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
                       Text('发现文件： $_fileCount '),
                       const SizedBox(width: 8),
                     ],
-                    if (_fileList.isNotEmpty &&
-                        _fileListTimeAnalysised.isEmpty) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        '发现文件 $_fileCount 个',
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
+                    //Time analysising...
                     if (_isTimeAnalysising) ...[
                       const SizedBox(width: 8),
                       const SizedBox(
@@ -173,73 +231,122 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
                         '已分析 ${_fileListTimeAnalysised.length} / $_fileCount ',
                       ),
                     ],
+                    //Time analysising completed
                     if (!_isTimeAnalysising &&
                         _fileListTimeAnalysised.isNotEmpty) ...[
+                      // const SizedBox(width: 8),
+                      // Icon(
+                      //   Icons.check_circle,
+                      //   color: Colors.green,
+                      // ),
+                      // Text(
+                      //   '分析完成 ${_fileListTimeAnalysised.length} 文件',
+                      //   style: const TextStyle(fontWeight: FontWeight.bold),
+                      // ),
                       const SizedBox(width: 8),
-                      Icon(
-                        Icons.check_circle,
-                        color: Colors.green,
-                      ),
-                      Text(
-                        '分析完成 ${_fileListTimeAnalysised.length} 文件',
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(width: 8),
-                      Tooltip(
-                        message:
-                            'EXIF: ${_fileListTimeAnalysised.where((r) => r.status == TimeAnalysisStatus.consistent && r.suggestedFrom == TimeAnalysisFrom.exif).length}'
-                            ' NAME: ${_fileListTimeAnalysised.where((r) => r.status == TimeAnalysisStatus.consistent && r.suggestedFrom == TimeAnalysisFrom.filename).length})',
-                        child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              // fixedSize: const Size(100, 24), // 固定宽高
-                              minimumSize: const Size(60, 30), // 控制最小宽高
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 12),
-                              textStyle: const TextStyle(fontSize: 10),
+                      // 搜索框
+                      // SizedBox(
+                      //   width: 200,
+                      //   child: TextField(
+                      //     decoration: InputDecoration(
+                      //       hintText: '搜索文件名...',
+                      //       prefixIcon: Icon(Icons.search, size: 16),
+                      //       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      //       border: OutlineInputBorder(
+                      //         borderRadius: BorderRadius.circular(20),
+                      //         borderSide: BorderSide(color: Colors.grey.shade300),
+                      //       ),
+                      //       enabledBorder: OutlineInputBorder(
+                      //         borderRadius: BorderRadius.circular(20),
+                      //         borderSide: BorderSide(color: Colors.grey.shade300),
+                      //       ),
+                      //       focusedBorder: OutlineInputBorder(
+                      //         borderRadius: BorderRadius.circular(20),
+                      //         borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                      //       ),
+                      //     ),
+                      //     style: TextStyle(fontSize: 12),
+                      //     onChanged: _updateSearchQuery,
+                      //   ),
+                      // ),
+                      // const SizedBox(width: 8),
+                      // 过滤按钮组
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 全部按钮
+                            _buildFilterButton(
+                              '全部',
+                              FileFilterType.all,
+                              Icons.filter_list,
+                              _fileListTimeAnalysised.length,
                             ),
-                            icon: const Icon(Icons.check, size: 16),
-                            onPressed: onPressed,
-                            label: Text(
-                                "一致 ${_fileListTimeAnalysised.where((r) => r.status == TimeAnalysisStatus.consistent).length}")),
-                      ),
-                      const SizedBox(width: 8),
-                      Tooltip(
-                        message:
-                            ' EXIF: ${_fileListTimeAnalysised.where((r) => r.status == TimeAnalysisStatus.needsFix && r.suggestedFrom == TimeAnalysisFrom.exif).length}'
-                            ' FILE: ${_fileListTimeAnalysised.where((r) => r.status == TimeAnalysisStatus.needsFix && r.suggestedFrom == TimeAnalysisFrom.filename).length})',
-                        child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              // fixedSize: const Size(100, 24), // 固定宽高
-                              minimumSize: const Size(60, 30), // 控制最小宽高
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 12),
-                              textStyle: const TextStyle(fontSize: 10),
+                            const SizedBox(width: 8),
+                            // 一致按钮
+                            _buildFilterButton(
+                              '一致',
+                              FileFilterType.consistent,
+                              Icons.check_circle,
+                              _fileListTimeAnalysised.where((r) => r.status == TimeAnalysisStatus.consistent).length,
+                              Colors.green,
                             ),
-                            icon: const Icon(Icons.timer, size: 16),
-                            onPressed: onPressed,
-                            label: Text(
-                                "修正 ${_fileListTimeAnalysised.where((r) => r.status == TimeAnalysisStatus.needsFix).length}'")),
-                      ),
-                      const SizedBox(width: 8),
-                      Tooltip(
-                        message: '',
-                        // child: Text(
-                        //     ' 无法解析：${_fileListTimeAnalysised.where((r) => r.status == TimeAnalysisStatus.cannotJudge).length}'),
-                        child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              // fixedSize: const Size(100, 24), // 固定宽高
-                              minimumSize: const Size(60, 30), // 控制最小宽高
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 12),
-                              textStyle: const TextStyle(fontSize: 10),
+                            const SizedBox(width: 8),
+                            // 修正按钮
+                            _buildFilterButton(
+                              '修正',
+                              FileFilterType.needsFix,
+                              Icons.timer,
+                              _fileListTimeAnalysised.where((r) => r.status == TimeAnalysisStatus.needsFix).length,
+                              Colors.orange,
                             ),
-                            icon:
-                                const Icon(Icons.image_not_supported, size: 16),
-                            onPressed: onPressed,
-                            label: Text(
-                                "无法解析 ${_fileListTimeAnalysised.where((r) => r.status == TimeAnalysisStatus.cannotJudge).length}")),
+                            const SizedBox(width: 8),
+                            // 无法解析按钮
+                            _buildFilterButton(
+                              '无法解析',
+                              FileFilterType.cannotJudge,
+                              Icons.help_outline,
+                              _fileListTimeAnalysised.where((r) => r.status == TimeAnalysisStatus.cannotJudge).length,
+                              Colors.grey,
+                            ),
+                          ],
+                        ),
                       ),
+                    ],
+                    //Stop button
+                    if (_isScanning || _isTimeAnalysising) ...[
+                      SizedBox(width: 8),
+                      Tooltip(
+                        message: '点击停止扫描',
+                        child: InkWell(
+                            onTap: () {
+                              // 停止扫描
+                              _stopScan();
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.red.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.stop,
+                                size: 16,
+                                color: Colors.red,
+                              ),
+                            )),
+                      )
                     ],
                   ],
                 ),
@@ -299,62 +406,162 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
 
   // 构建文件列表视图
   Widget _buildFileList() {
-    if (_fileList.isEmpty) {
-      return const Center(child: Text('请选择一个目录'));
+    final filteredList = _filteredFileList;
+    
+    if (filteredList.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.filter_list, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('没有符合条件的文件',
+                style: TextStyle(fontSize: 18, color: Colors.grey)),
+            SizedBox(height: 8),
+            Text('尝试调整过滤条件或搜索关键词',
+                style: TextStyle(fontSize: 14, color: Colors.grey)),
+          ],
+        ),
+      );
     }
 
     return Scrollbar(
       controller: _scrollController,
       thumbVisibility: true,
-      child: ListView.separated(
+      child: ListView.builder(
         controller: _scrollController,
-        itemCount: _fileList.length,
-        // 使用separated更高效地添加分隔线
-        separatorBuilder: (context, index) => const Divider(height: 1),
+        itemCount: filteredList.length,
+        itemExtent: 72.0, // 固定高度提升滚动性能
+        cacheExtent: 200.0, // 增加缓存区域
+        addAutomaticKeepAlives: false, // 禁用自动保持活动状态
+        addRepaintBoundaries: true, // 启用重绘边界
         itemBuilder: (context, index) {
-          File file = _fileList[index];
+          File file = filteredList[index];
+          
+          // 在原始列表中查找对应的分析结果
+          final originalIndex = _fileList.indexOf(file);
           TimeAnalysisResult? analysisResult;
 
           // 查找当前文件的时间分析结果
-          if (index < _fileListTimeAnalysised.length) {
-            analysisResult = _fileListTimeAnalysised[index];
+          if (originalIndex >= 0 && originalIndex < _fileListTimeAnalysised.length) {
+            analysisResult = _fileListTimeAnalysised[originalIndex];
           }
 
-          return _buildFileListRow(file, analysisResult);
+          return Column(
+            children: [
+              _buildFileListRow(file, analysisResult),
+              if (index < filteredList.length - 1) const Divider(height: 1),
+            ],
+          );
         },
+      ),
+    );
+  }
+
+  // 构建过滤按钮
+  Widget _buildFilterButton(
+    String label,
+    FileFilterType filterType,
+    IconData icon,
+    int count, [
+    Color? activeColor,
+  ]) {
+    final isActive = _currentFilter == filterType;
+    final color = activeColor ?? Theme.of(context).primaryColor;
+
+    return Tooltip(
+      message: '$label: $count 个文件',
+      child: InkWell(
+        onTap: () => _setFilter(filterType),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          decoration: BoxDecoration(
+            color: isActive ? color.withOpacity(0.1) : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isActive ? color : Colors.grey.shade300,
+              width: isActive ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 14,
+                color: isActive ? color : Colors.grey.shade600,
+              ),
+              SizedBox(width: 4),
+              Text(
+                '$label',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isActive ? color : Colors.grey.shade700,
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+              if (count > 0) ...[
+                SizedBox(width: 4),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isActive ? color : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    count.toString(),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isActive ? Colors.white : Colors.grey.shade700,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
 
   // 构建文件列表项 row
   Widget _buildFileListRow(File file, TimeAnalysisResult? analysisResult) {
-    return ListTile(
-      leading: const Icon(Icons.insert_drive_file, size: 20),
-      title: Row(
-        children: [
-          Flexible(
-            child: SelectableText(
-              file.path.split(Platform.pathSeparator).last,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-      subtitle: SelectableText(
-        file.path,
-        style: const TextStyle(fontSize: 12, color: Colors.grey),
-      ),
-      trailing: SizedBox(
-        width: 200, // 设置固定宽度以控制右侧显示区域
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisAlignment: MainAxisAlignment.center,
+    return RepaintBoundary(
+      child: ListTile(
+        leading: const Icon(Icons.insert_drive_file, size: 20),
+        title: Row(
           children: [
-            // 原始修改时间（trailing显示）
-            _buildFileOrignalTime(file, analysisResult),
-            // 分析结果（trailing显示）
-            _buildFileAnalyTime(analysisResult)
+            Flexible(
+              child: Text(
+                file.path.split(Platform.pathSeparator).last,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
+        ),
+        subtitle: Text(
+          file.path,
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: SizedBox(
+          width: 200, // 设置固定宽度以控制右侧显示区域
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // 原始修改时间（trailing显示）
+              _buildFileOrignalTime(file, analysisResult),
+              // 分析结果（trailing显示）
+              _buildFileAnalyTime(analysisResult)
+            ],
+          ),
         ),
       ),
     );
@@ -433,6 +640,17 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
     );
   }
 
+  // 停止扫描
+  void _stopScan() {
+    if (_isScanning || _isTimeAnalysising) {
+      setState(() {
+        _isScanning = false;
+        _isTimeAnalysising = false;
+      });
+      notification.show(msg: '扫描已停止');
+    }
+  }
+
   // 检查并请求存储权限
   Future<bool> _checkAndroidStoragePermission() async {
     // 根据Android版本检查不同的权限
@@ -496,6 +714,11 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
 
   // 开始扫描目录
   Future<void> _directoryScan(String directoryPath) async {
+    // 记录开始时间
+    final startTime = DateTime.now();
+    int fileScanCount = 0;
+    int timeAnalysisCount = 0;
+    
     // 检查权限
     bool hasPermission = await _checkAndroidStoragePermission();
     if (!hasPermission) {
@@ -517,7 +740,10 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
     });
 
     // 扫描目录列表
-    await _directoryScanList(directoryPath);
+    final scanStartTime = DateTime.now();
+    await _directoryScanRun(directoryPath);
+    final scanEndTime = DateTime.now();
+    fileScanCount = _fileList.length;
 
     // notification.show(title: '扫描完成', msg: '已扫描 ${_fileList.length} 个文件');
 
@@ -532,18 +758,41 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
       _isTimeAnalysising = true;
     });
 
+    final analysisStartTime = DateTime.now();
     await _directoryScanTime();
+    final analysisEndTime = DateTime.now();
+    timeAnalysisCount = _fileListTimeAnalysised.length;
 
     safeSetState(() {
       _isTimeAnalysising = false;
     });
+
+    // 计算总耗时并显示完成通知
+    final endTime = DateTime.now();
+    final totalDuration = endTime.difference(startTime);
+    final scanDuration = scanEndTime.difference(scanStartTime);
+    final analysisDuration = analysisEndTime.difference(analysisStartTime);
+    
+    // 显示详细的完成时间统计
+    final message = '扫描完成！\n'
+        '总耗时: ${_formatDuration(totalDuration)}\n'
+        '文件扫描: ${fileScanCount}个文件, 耗时: ${_formatDuration(scanDuration)}\n'
+        '时间分析: ${timeAnalysisCount}个文件, 耗时: ${_formatDuration(analysisDuration)}';
+    
+    notification.show(
+      title: '扫描完成', 
+      msg: message,
+      persistent: true,
+    );
 
     // 调用文件列表更新回调
     widget.onFileListUpdated?.call(_fileList);
   }
 
   // 递归扫描目录
-  Future<void> _directoryScanList(String directoryPath) async {
+  // 遍历目录下的所有文件和子目录
+  // 将会改变数据状态: _fileCount, _fileList
+  Future<void> _directoryScanRun(String directoryPath) async {
     Directory directory = Directory(directoryPath);
     final List<File> files = [];
 
@@ -558,6 +807,12 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
           directory.list(recursive: true, followLinks: false);
 
       await for (var entity in entityStream) {
+        // 检查是否已停止扫描
+        if (!_isScanning) {
+          logger.i('扫描已被用户停止');
+          return;
+        }
+
         // 暂停10毫秒，避免UI卡顿
         // await Future.delayed(const Duration(milliseconds: 2));
 
@@ -576,7 +831,7 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
 
         //update file count every 10 files
         int count = files.length;
-        if ((count + 1) % 10 == 0) {
+        if ((count + 1) % 100 == 0) {
           safeSetState(() {
             _fileCount = files.length;
           });
@@ -633,39 +888,28 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
 
     // 遍历所有文件
     for (int i = 0; i < _fileList.length; i++) {
-      final file = _fileList[i];
+      // 检查是否已停止扫描
+      if (!_isTimeAnalysising) {
+        logger.i('时间分析已被用户停止');
+        return;
+      }
 
       // await Future.delayed(const Duration(milliseconds: 10));
 
       // 使用TimeAnalyzer.analyzeSingleFile方法获取分析结果
-      final result = await TimeAnalyzer.analyzeFile(file);
+      final result = await TimeAnalyzer.analyzeFile(_fileList[i]);
       results.add(result);
 
       // 显示进度信息
-      if (i % 10 == 0) {
+      if (i % 100 == 0 || i == _fileList.length - 1) {
+        await Future.delayed(const Duration(milliseconds: 10));  // 暂停1毫秒，避免UI卡顿
         // 更新时间分析结果列表
         safeSetState(() {
-          _fileListTimeAnalysised = results;
+          _fileListTimeAnalysised.addAll(results);
+          results.clear();
         });
       }
     }
-
-    safeSetState(() {
-      _fileListTimeAnalysised = results;
-    });
-
-    // // 显示检查结果
-    // final message = '文件时间检查完成: 总计 ${_fileList.length} 个文件\n'
-    //     ' 时间一致：${results.where((r) => r.status == TimeAnalysisStatus.consistent).length}\n'
-    //     '      EXIF解析：${results.where((r) => r.status == TimeAnalysisStatus.consistent && r.suggestedFrom == TimeAnalysisFrom.exif).length}\n'
-    //     '      文件名解析：${results.where((r) => r.status == TimeAnalysisStatus.consistent && r.suggestedFrom == TimeAnalysisFrom.filename).length}\n'
-    //     ' 需要修正：${results.where((r) => r.status == TimeAnalysisStatus.needsFix).length}\n'
-    //     '      EXIF解析：${results.where((r) => r.status == TimeAnalysisStatus.needsFix && r.suggestedFrom == TimeAnalysisFrom.exif).length}\n'
-    //     '      文件名解析：${results.where((r) => r.status == TimeAnalysisStatus.needsFix && r.suggestedFrom == TimeAnalysisFrom.filename).length}\n'
-    //     ' 无法解析时间：${results.where((r) => r.status == TimeAnalysisStatus.cannotJudge).length}\n'
-    //     '---------------------------';
-
-    // notification.show(title: '扫描完成', msg: message, persistent: true);
   }
 
   // 格式化日期时间
@@ -679,5 +923,20 @@ class _DirectoryListWidgetState extends State<DirectoryListWidget> {
   // 格式化两位数
   String _twoDigits(int n) {
     return n.toString().padLeft(2, '0');
+  }
+
+  // 格式化持续时间
+  String _formatDuration(Duration duration) {
+    if (duration.inDays > 0) {
+      return '${duration.inDays}天 ${duration.inHours % 24}小时 ${duration.inMinutes % 60}分 ${duration.inSeconds % 60}秒';
+    } else if (duration.inHours > 0) {
+      return '${duration.inHours}小时 ${duration.inMinutes % 60}分 ${duration.inSeconds % 60}秒';
+    } else if (duration.inMinutes > 0) {
+      return '${duration.inMinutes}分 ${duration.inSeconds % 60}秒';
+    } else if (duration.inSeconds > 0) {
+      return '${duration.inSeconds}秒 ${duration.inMilliseconds % 1000}毫秒';
+    } else {
+      return '${duration.inMilliseconds}毫秒';
+    }
   }
 }

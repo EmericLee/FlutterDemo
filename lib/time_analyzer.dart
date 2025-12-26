@@ -76,8 +76,9 @@ class TimeAnalyzer {
   /// 从图片EXIF信息中提取创建时间
   static Future<DateTime?> extractFromExif(File file) async {
     try {
-      final bytes = await file.readAsBytes();
-      final tags = await readExifFromBytes(bytes);
+      // final bytes = await file.readAsBytes();
+      // final tags = await readExifFromBytes(bytes);
+      final tags = await readExifFromFile(file) ;
 
       // 常见的EXIF时间标签
       final timeTags = [

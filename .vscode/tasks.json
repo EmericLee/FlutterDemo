@@ -2,17 +2,20 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "release",
+            "label": "Release Patch",
             "type": "shell",
-            "command": "dart run release.dart",
+            "command": "dart run release.dart patch",
+            // "command": "dart run release.dart minor",
         },
-
         {
-            "label": "发布 Minor 版本 (1.x.0)",
+            "label": "Run windows",
             "type": "shell",
-            "command": ".\\scripts\\release.ps1 -Type minor",
-            "problemMatcher": [],
-            "group": "none"
-        }
+            "command": "flutter run -d windows",
+        },
+        {
+            "label": "Run Selected",
+            "type": "shell",
+            "command": "flutter run",
+        },
     ]
 }

@@ -27,6 +27,7 @@ void main() {
   //   expect(find.text('1'), findsOneWidget);
   // });
 
+  // Test the extractFromName function
   group('extractFromName tests', () {
     test('should extract date from YYYY/MM/DD HH:MM:SS format', () {
       final result = TimeAnalyzer.extractFromName('D:/Photos/2023/06/05/2023/06/05 10:15:30.jpg');

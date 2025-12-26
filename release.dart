@@ -1,8 +1,3 @@
-// ignore_for_file: avoid_print
-// dart run release.dart [type]
-// type: patch, minor, major, build
-// build: 仅增加构建号，不改变版本号
-
 // ### Init evn
 // 1. 检查是否安装了 cider 
 //      dart pub global activate cider
@@ -10,12 +5,9 @@
 // 2. 检查是否在 Flutter 项目根目录
 
 // ### 发布脚本
-// 1. 检查参数是否合法
-// 2. 检查 Git 状态
-// 3. 运行 Cider 升级版本
-// 4. 获取新版本号
-// 5. Git 提交与打 Tag
-// 6. 推送到远程仓库
+// dart run release.dart [type]
+// type: patch, minor, major, build
+// build: 仅增加构建号，不改变版本号
 
 import 'dart:io';
 
@@ -70,7 +62,7 @@ void main(List<String> args) {
 
     runCommand('git', ['push']);
     runCommand('git', ['push', '--tags']);
-        print('🎉 发布完成！');
+    print('🎉 发布完成！');
     print('👉 提交信息: $commitMsg  Tag: $tagName');
 
   } catch (e) {
