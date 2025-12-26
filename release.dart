@@ -3,6 +3,20 @@
 // type: patch, minor, major, build
 // build: 仅增加构建号，不改变版本号
 
+// ### Init evn
+// 1. 检查是否安装了 cider 
+//      dart pub global activate cider
+//      cider version
+// 2. 检查是否在 Flutter 项目根目录
+
+// ### 发布脚本
+// 1. 检查参数是否合法
+// 2. 检查 Git 状态
+// 3. 运行 Cider 升级版本
+// 4. 获取新版本号
+// 5. Git 提交与打 Tag
+// 6. 推送到远程仓库
+
 import 'dart:io';
 
 void main(List<String> args) {
