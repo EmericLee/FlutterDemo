@@ -3,7 +3,7 @@
 
 一个智能的Flutter文件时间修正工具，专门用于解决文件传输、手机备份恢复过程中可能造成的时间信息混乱问题。
 
-- **下载地址**: [GitHub Releases](https://github.com/EmericLee/FlutterDemo/releases)
+- **下载地址**: [GitHub Releases](https://github.com/EmericLee/FTimeFixer/releases)
 
 ## 🎯 项目介绍
 
