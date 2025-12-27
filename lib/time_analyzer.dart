@@ -1,14 +1,13 @@
 import 'dart:io';
 import 'dart:core';
 import 'package:exif/exif.dart';
-import 'package:flutter/foundation.dart';
-import 'logger_service.dart';
 
 /// 时间分析状态枚举
 enum TimeAnalysisStatus {
   consistent, // 时间一致，无需修正
   needsFix, // 需要修正时间
-  cannotJudge // 无法判断
+  cannotJudge, // 无法判断
+  fixed, // 已修正时间
 }
 
 /// 时间分析方法枚举
@@ -23,8 +22,8 @@ class TimeAnalysisResult {
   final File file;
   final DateTime originalTime;
   final DateTime? suggestedTime;
-  final TimeAnalysisStatus status;
   final TimeAnalysisFrom suggestedFrom;
+  TimeAnalysisStatus status;
 
   TimeAnalysisResult({
     required this.file,
@@ -121,6 +120,9 @@ class TimeAnalyzer {
 
     // 支持的时间格式正则表达式
     final timePatterns = [
+      //should extract date from 20210618165732 format
+      // 20210618165732 格式，例如 "20210618165732"
+      RegExp(r'(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})'),
       // YYYY/MM/DD HH:MM:SS 格式，例如 "2012/02/02 12:00:00"
       // YYYY-MM-DD HH:MM:SS 格式，例如 "2012-02-02 12:00:00"
       // 分隔符可以是“-" "/" "_" ":"
@@ -131,6 +133,8 @@ class TimeAnalyzer {
       // YYYYMMDD_HHMMSS 格式，例如 "20120202_120000"
       // YYYYMMDDHHMMSS 格式，例如 "20120202120000"
       RegExp(r'(\d{4})(\d{2})(\d{2})[_-\s]?(\d{2})(\d{2})(\d{2})'),
+      // YYYY-MM-DD-HH-MM-SS 格式，例如 "2021-08-31-18-12-31",分隔符可以是“-" "/" "_" ":" “ ”
+      RegExp(r'(\d{4})[-_:/\s](\d{2})[-_:/\s](\d{2})[-_:/\s](\d{2})[-_:/\s](\d{2})[-_:/\s](\d{2})'),
       // YYYY-MM-DD 格式，例如 "2012-02-02",分隔符可以是“-" "/" "_" ":" “ ”
       RegExp(r'(\d{4})[-_:/\s](\d{2})[-_:/\s](\d{2})'),
       // YYYYMMDD 格式，例如 "20120202"
@@ -138,14 +142,10 @@ class TimeAnalyzer {
     ];
 
     for (final pattern in timePatterns) {
-      final match = pattern.firstMatch(filename);
-      if (match != null) {
+      // final match = pattern.firstMatch(filename);
+      for(RegExpMatch match in pattern.allMatches(filename)){
+        // logger.d('匹配: ${match.group(0)}');
         try {
-          //显示所有匹配组，包括null值，自动判断匹配元素数量
-          // final groups = List<String?>.generate(
-          //     match.groupCount + 1, (i) => match.group(i));
-          // logger.d('匹配组: $groups');
-
           if (match.groupCount >= 3) {
             int year, month, day, hour, minute, second;
             final yearStr = match.group(1);
@@ -183,7 +183,7 @@ class TimeAnalyzer {
               }
             }
           }
-        } catch (e) {
+        } on FormatException {
           // 解析失败，尝试下一个模式
           continue;
         }

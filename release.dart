@@ -9,6 +9,8 @@
 // type: patch, minor, major, build
 // build: 仅增加构建号，不改变版本号
 
+// ignore_for_file: avoid_print
+
 import 'dart:io';
 
 void main(List<String> args) {

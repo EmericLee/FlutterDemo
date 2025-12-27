@@ -84,6 +84,30 @@ void main() {
       expect(result?.second, 30);
     });
 
+    //Screenshot_2021-08-31-18-12-31-869_com.hicorenational.antifraud.jpg
+    test('should extract date from 2021-08-31-18-12-31 format', () {
+      final result = TimeAnalyzer.extractFromName('Screenshot_2021-08-31-18-12-31-869_com.antifraud.jpg');
+      expect(result, isNotNull);
+      expect(result?.year, 2021);
+      expect(result?.month, 8);
+      expect(result?.day, 31);
+      expect(result?.hour, 18);
+      expect(result?.minute, 12);
+      expect(result?.second, 31);
+    });
+    //D:\temp\小米13\DCIM\Camera\lv_6966154319301332224_20210618165732.mp4
+    test('should extract date from lv_6966154319301332224_20210618165732 format', () {
+      final result = TimeAnalyzer.extractFromName('lv_6966154319301332224_20210618165732.mp4');
+      expect(result, isNotNull);
+      expect(result?.year, 2021);
+      expect(result?.month, 6);
+      expect(result?.day, 18);
+      expect(result?.hour, 16);
+      expect(result?.minute, 57);
+      expect(result?.second, 32);
+    });
+
+
     test('should extract date from YYYYMMDD format', () {
       final result = TimeAnalyzer.extractFromName('D:/Photos/20230605.jpg');
       expect(result, isNotNull);

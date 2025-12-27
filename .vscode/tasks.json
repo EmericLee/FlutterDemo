@@ -4,18 +4,23 @@
         {
             "label": "Release Patch",
             "type": "shell",
-            "command": "dart run release.dart patch",
-            // "command": "dart run release.dart minor",
+            "command": "dart run release.dart patch"
         },
         {
             "label": "Run windows",
             "type": "shell",
             "command": "flutter run -d windows",
+            "problemMatcher": []
         },
         {
             "label": "Run Selected",
             "type": "shell",
-            "command": "flutter run",
+            "command": "flutter run"
         },
+        {
+            "label": "Run analyzen 分析代码",
+            "type": "shell",
+            "command": "flutter analyzen"
+        }
     ]
 }

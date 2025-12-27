@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'directory_scan.dart';
-import 'notification_service.dart';
+import 'wp_file_time_fixer.dart';
 
 // 首页组件
 class HomePage extends StatefulWidget {
@@ -42,7 +41,7 @@ class _HomePageState extends State<HomePage> {
             children: [
               // 应用名称
               Text(
-                'Flutter Demo',
+                'FTime Fixer',
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.primary,
@@ -59,18 +58,31 @@ class _HomePageState extends State<HomePage> {
                           ),
                     )
                   : const CircularProgressIndicator(),
-              const SizedBox(height: 48),
+              const SizedBox(height: 24),
               
               // 介绍文字
               const Text(
-                '这是一个Flutter演示应用，展示了页面切换、文件扫描和状态保持等功能。\n\n' 
-                '主要功能：\n' 
-                '• 版本信息展示\n' 
-                '• 文件系统扫描\n' 
-                '• 状态保持的页面切换',
+                '一个智能的Flutter文件时间修正工具，专门用于解决文件传输、手机备份恢复过程中可能造成的时间信息混乱问题。\n\n',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
+                  height: 1.5,
+                  color: Colors.black45,
+                ),
+              ),
+              const SizedBox(height: 36),
+              const Text(
+                '主要功能：\n' 
+                '• 智能目录扫描分析文件可能的时间信息\n' 
+                '• 自动修正文件时间戳\n' 
+                '• 性能优化，支持大目录扫描\n' 
+                '• 跨平台支持 windows linux android & arm...\n'
+                '\n © 2024 disminde https://github.com/disminde  \n'
+                '\n'
+                '',
+                textAlign: TextAlign.left,
+                style: TextStyle(
+                  fontSize: 14,
                   height: 1.5,
                   color: Colors.grey,
                 ),
@@ -89,11 +101,10 @@ class FileScannerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('文件扫描'),
-      ),
-      body: const DirectoryListWidget(),
+    return WPFileTimeFixer(
+      isPage: true,
+      pageTitle: '文件扫描',
+      autoFixEnabled: false, // 启用自动修正功能
     );
   }
 }

@@ -10,8 +10,8 @@ on:
 
 env:
   FLUTTER_VERSION: '3.38.3'
-  APP_NAME: 'flutter_demo'
-  APP_ID: com.example.myapp
+  APP_NAME: 'FTimeFixer'
+  APP_ID: com.emeric.ftimefixer
   RELEASE_NAME: "Release ${{ github.ref_name }}"
 
 jobs:

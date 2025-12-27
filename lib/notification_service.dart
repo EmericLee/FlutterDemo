@@ -26,7 +26,7 @@ class NotificationService {
           child: Align(
             alignment: Alignment.topRight, // 1. 设定位置：右上角
             child: Container(
-              margin: const EdgeInsets.only(top: 10, right: 10),
+              margin: const EdgeInsets.only(top: 100, right: 10),
               width: 320, // 2. 设定通知的宽度
               child: ValueListenableBuilder<List<_ToastItem>>(
                 valueListenable: _itemsNotifier,
@@ -97,7 +97,7 @@ class _ToastWidget extends StatefulWidget {
   final _ToastItem item;
   final VoidCallback onDismiss;
 
-  const _ToastWidget({Key? key, required this.item, required this.onDismiss}) : super(key: key);
+  const _ToastWidget({super.key, required this.item, required this.onDismiss});
 
   @override
   State<_ToastWidget> createState() => _ToastWidgetState();
@@ -114,7 +114,7 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
     super.initState();
     _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
     _opacity = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
-    _offset = Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero)
+    _offset = Tween<Offset>(begin: const Offset(0.0, 1.0), end: const Offset(0.0, 0.0))
         .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     // 播放入场动画
