@@ -103,7 +103,7 @@ class FileScannerPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return WPFileTimeFixer(
       isPage: true,
-      pageTitle: '文件扫描',
+      pageTitle: '时间修正',
       autoFixEnabled: false, // 启用自动修正功能
     );
   }

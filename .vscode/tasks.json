@@ -4,7 +4,8 @@
         {
             "label": "Release Patch",
             "type": "shell",
-            "command": "dart run release.dart patch"
+            "command": "dart run release.dart patch",
+            "problemMatcher": []
         },
         {
             "label": "Run windows",

@@ -175,32 +175,28 @@ class _WPFileTimeFixerState extends State<WPFileTimeFixer> {
                 size: 20,
               ),
               const SizedBox(width: 8),
-              Text(widget.pageTitle ?? '目录列表'),
+              Text(widget.pageTitle ?? '时间修正'),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 4.0, horizontal: 8.0),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.blue,
-                        ),
-                        onPressed: _directorySelect,
-                        child: Row(
-                          children: [
-                            const Icon(Icons.folder_open),
-                            const SizedBox(width: 5),
-                            if (_selectedDirectory == null) ...[
-                              const Text('选择目录'),
-                            ] else ...[
-                              const Text('重新扫描目录'),
-                            ]
-                          ],
-                        ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.blue,
+                      ),
+                      onPressed: _directorySelect,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.folder_open),
+                          const SizedBox(width: 5),
+                          if (_selectedDirectory == null) ...[
+                            const Text('选择目录'),
+                          ] else ...[
+                            const Text('重新开始'),
+                          ]
+                        ],
                       ),
                     ),
                     SizedBox(width: 8),
@@ -548,13 +544,22 @@ class _WPFileTimeFixerState extends State<WPFileTimeFixer> {
 
       // 使用TimeAnalyzer.analyzeSingleFile方法获取分析结果
       final result = await TimeAnalyzer.analyzeFile(_fileList[i]);
+      
+      // 异步处理文件修改，避免UI阻塞
       if (_autoFixEnabled &&
           result.status == TimeAnalysisStatus.needsFix &&
           result.suggestedTime != null) {
-        //修改文件创建时间和最后修改到建议时间
-        _fileList[i].setLastModifiedSync(result.suggestedTime!);
-        result.status = TimeAnalysisStatus.fixed;
+        
+        // 使用异步方法替代同步方法
+        bool fixSuccess = await _fixFileTimeSafely(_fileList[i], result.suggestedTime!);
+        if (fixSuccess) {
+          result.status = TimeAnalysisStatus.fixed;
+        } else {
+          // 记录失败原因，但不中断整个流程
+          logger.w('无法修改文件时间: ${_fileList[i].path}');
+        }
       }
+      
       results.add(result);
 
       // 显示进度信息
@@ -565,7 +570,47 @@ class _WPFileTimeFixerState extends State<WPFileTimeFixer> {
           results.clear();
         });
       }
-      await Future.delayed(const Duration(milliseconds: 2)); // 暂停1毫秒，避免UI卡顿
+      
+      // 添加小延迟，避免UI卡顿
+      await Future.delayed(const Duration(milliseconds: 2));
+    }
+  }
+
+  // 安全地修改文件时间，处理Android权限问题
+  Future<bool> _fixFileTimeSafely(File file, DateTime newTime) async {
+    try {
+      // 检查文件是否存在
+      if (!await file.exists()) {
+        logger.w('文件不存在: ${file.path}');
+        return false;
+      }
+
+      // 检查文件是否可写
+      if (!await file.exists() || !(await file.length() >= 0)) {
+        logger.w('文件不可访问: ${file.path}');
+        return false;
+      }
+
+      // 使用异步方法修改文件时间
+      await file.setLastModified(newTime);
+      
+      logger.i('成功修改文件时间: ${file.path} -> $newTime');
+      return true;
+      
+    } catch (e) {
+      // 详细记录错误信息
+      logger.e('修改文件时间失败: ${file.path}, 错误: $e');
+      
+      // 根据不同错误类型提供具体建议
+      if (e.toString().contains('Permission denied')) {
+        logger.w('权限不足: ${file.path}。建议: 1) 检查MANAGE_EXTERNAL_STORAGE权限 2) 选择应用可访问的目录');
+      } else if (e.toString().contains('ENOENT')) {
+        logger.w('文件路径无效: ${file.path}');
+      } else if (e.toString().contains('EPERM')) {
+        logger.w('操作被拒绝: ${file.path}。可能是系统保护的文件');
+      }
+      
+      return false;
     }
   }
 
